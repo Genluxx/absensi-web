@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Pertamina Shield / Flame Logo -->
+  <defs>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e31937"/>
+      <stop offset="100%" style="stop-color:#b71c1c"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00a651"/>
+      <stop offset="100%" style="stop-color:#1b5e20"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0072bc"/>
+      <stop offset="100%" style="stop-color:#01579b"/>
+    </linearGradient>
+  </defs>
+  <!-- Red flame (left) -->
+  <path d="M100 15 C75 50, 45 75, 45 110 C45 145, 68 175, 100 185 C80 165, 70 145, 70 120 C70 95, 85 65, 100 15Z" fill="url(#redGrad)"/>
+  <!-- Green flame (center) -->
+  <path d="M100 40 C88 70, 78 90, 78 115 C78 145, 88 170, 100 185 C112 170, 122 145, 122 115 C122 90, 112 70, 100 40Z" fill="url(#greenGrad)"/>
+  <!-- Blue flame (right) -->
+  <path d="M100 15 C125 50, 155 75, 155 110 C155 145, 132 175, 100 185 C120 165, 130 145, 130 120 C130 95, 115 65, 100 15Z" fill="url(#blueGrad)"/>
+  <!-- White highlight -->
+  <path d="M100 50 C93 75, 88 95, 88 115 C88 140, 93 160, 100 175 C107 160, 112 140, 112 115 C112 95, 107 75, 100 50Z" fill="white" opacity="0.15"/>
+</svg>

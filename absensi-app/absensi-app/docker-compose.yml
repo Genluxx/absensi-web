@@ -1,0 +1,42 @@
+services:
+  absensi-mysql:
+    image: mysql:8.0
+    container_name: absensi-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword123
+      - MYSQL_DATABASE=absensi_db
+      - MYSQL_USER=absensi_user
+      - MYSQL_PASSWORD=absensi_pass123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  absensi-backend:
+    build: ./backend
+    container_name: absensi-backend
+    depends_on:
+      absensi-mysql:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=ganti_dengan_string_rahasia_yang_panjang_dan_acak
+      - DB_HOST=absensi-mysql
+      - DB_PORT=3306
+      - DB_USER=absensi_user
+      - DB_PASSWORD=absensi_pass123
+      - DB_NAME=absensi_db
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

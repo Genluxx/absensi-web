@@ -1,0 +1,22 @@
+services:
+  absensi-web-mysql:
+    image: mysql:8.0
+    container_name: absensi-web-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword123
+      - MYSQL_DATABASE=absensi_web
+      - MYSQL_USER=absensi_web_user
+      - MYSQL_PASSWORD=absensi_web_pass123
+    ports:
+      - "3307:3306"
+    volumes:
+      - absensi_web_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  absensi_web_mysql_data:
