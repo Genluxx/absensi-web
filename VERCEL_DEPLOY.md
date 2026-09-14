@@ -1,8 +1,27 @@
 # Deploy SAP.HRIS ke Vercel
 
 Project ini sudah memiliki entrypoint Vercel di `api/index.php` dan routing di `vercel.json`.
+File `.vercelignore` mengecualikan project Flutter/mobile, dependency lokal, cache, storage, dan environment secret agar upload tidak melewati batas Vercel.
 
 ## Langkah deploy
+
+### Deploy lewat CLI
+
+Jika muncul `The specified token is not valid`, reset login CLI:
+
+```bash
+npx vercel logout
+npx vercel login
+npx vercel whoami
+```
+
+Pastikan `whoami` menampilkan akun GitHub/Vercel yang memiliki project target, lalu jalankan:
+
+```bash
+npx vercel --prod
+```
+
+### Deploy lewat dashboard
 
 1. Push repository ke GitHub.
 2. Di Vercel pilih **Add New Project** lalu import repository.
@@ -52,3 +71,12 @@ php artisan migrate --force
 ```
 
 - Jangan upload file `.env` ke GitHub. Isi secrets melalui Vercel Project Settings.
+
+## Jika halaman blank
+
+1. Buka Vercel **Deployments > deployment terakhir > Functions > api/index.php > Logs**.
+2. Pastikan `APP_KEY` sudah diisi. Generate dengan `php artisan key:generate --show`.
+3. Pastikan `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_DRIVER=cookie`, dan `CACHE_STORE=array`.
+4. Pastikan `APP_URL` memakai URL deployment Vercel.
+5. Pastikan URL database bukan `127.0.0.1` atau `localhost`; gunakan database managed yang bisa diakses internet.
+6. Setelah mengubah environment variables, lakukan **Redeploy** dengan opsi **Use existing Build Cache** dimatikan.
