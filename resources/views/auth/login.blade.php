@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        html { font-family: 'Manrope', sans-serif; }
+        html, body { font-family: 'Manrope', 'Segoe UI', sans-serif; }
         .login-shell { box-shadow: 0 32px 90px rgba(0, 8, 24, .62), 0 0 0 1px rgba(145, 201, 255, .08); }
         .brand-grid { background-image: linear-gradient(135deg, rgba(145, 201, 255, .06) 1px, transparent 1px); background-size: 32px 32px; }
         .moon-orbit { box-shadow: 0 0 44px rgba(133, 196, 255, .14); }
@@ -88,7 +88,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-blue-100/80 mb-2">Username</label>
-                    <div class="field relative flex items-center rounded-xl border border-slate-200 bg-white transition">
+                    <div class="field relative flex items-center rounded-xl border transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-200/45 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                         </svg>
@@ -98,11 +98,11 @@
 
                 <div>
                     <label class="block text-xs font-bold text-blue-100/80 mb-2">Password</label>
-                    <div class="field relative flex items-center rounded-xl border border-slate-200 bg-white transition">
+                    <div class="field relative flex items-center rounded-xl border transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-200/45 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                         </svg>
-                           <input type="password" name="password" required class="w-full bg-transparent text-blue-50 pl-10 pr-3 py-3 text-sm focus:outline-none" placeholder="Masukkan password">
+                                <input type="password" name="password" required class="w-full bg-transparent text-blue-50 pl-10 pr-3 py-3 text-sm focus:outline-none" placeholder="Masukkan password">
                     </div>
                 </div>
 

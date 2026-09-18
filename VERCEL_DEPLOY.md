@@ -1,68 +1,50 @@
-# Deploy SAP.HRIS ke Vercel
+# Deploy SAP.HRIS ke Render Free
 
-Project ini sudah memiliki entrypoint Vercel di `api/index.php` dan routing di `vercel.json`.
-File `.vercelignore` mengecualikan project Flutter/mobile, dependency lokal, cache, storage, dan environment secret agar upload tidak melewati batas Vercel.
+Project ini menyediakan `Dockerfile` dan `render.yaml` untuk deployment ke Render Free. Render akan memberikan URL publik seperti `https://absensi-web.onrender.com`, sehingga aplikasi dapat diakses dari jaringan mana pun.
 
 ## Langkah deploy
 
-### Deploy lewat CLI
+URL gratis Vercel berbentuk `https://nama-project.vercel.app` dan dapat dibuka dari jaringan atau IP mana pun. Komputer lokal tidak perlu menyala setelah deployment selesai.
 
-Jika muncul `The specified token is not valid`, reset login CLI:
+## Deploy lewat dashboard Render
 
-```bash
-npx vercel logout
-npx vercel login
-npx vercel whoami
-```
-
-Pastikan `whoami` menampilkan akun GitHub/Vercel yang memiliki project target, lalu jalankan:
-
-```bash
-npx vercel --prod
-```
-
-### Deploy lewat dashboard
-
-1. Push repository ke GitHub.
-2. Di Vercel pilih **Add New Project** lalu import repository.
-3. Biarkan framework preset kosong atau pilih **Other**.
-4. Tambahkan environment variables berikut di Project Settings:
+1. Push repository ini ke GitHub.
+2. Buka Render Dashboard, pilih **New > Web Service**, lalu hubungkan repository.
+3. Pilih **Docker** sebagai runtime dan paket **Free**.
+4. Isi environment variables berikut:
 
 ```text
-APP_NAME=SAP.HRIS
-APP_ENV=production
-APP_DEBUG=false
-APP_KEY=base64:GENERATE_DENGAN_PHP_ARTISAN_KEY_GENERATE
-APP_URL=https://domain-vercel-kamu.vercel.app
-LOG_CHANNEL=stderr
-SESSION_DRIVER=cookie
-CACHE_STORE=array
-FILESYSTEM_DISK=local
-```
-
-5. Isi variable database sesuai database MySQL/PostgreSQL eksternal yang bisa diakses internet:
-
-```text
-DB_CONNECTION=mysql
-DB_HOST=...
+APP_KEY=hasil_php_artisan_key_generate
+APP_URL=https://nama-service.onrender.com
+DB_HOST=host-database-cloud
 DB_PORT=3306
-DB_DATABASE=...
-DB_USERNAME=...
-DB_PASSWORD=...
+DB_DATABASE=nama_database
+DB_USERNAME=user_database
+DB_PASSWORD=password_database
 ```
 
-6. Deploy.
+5. Klik **Create Web Service**. Render akan membangun `Dockerfile` dan memberikan URL publik.
+6. Setelah service aktif, jalankan migration dari komputer lokal dengan `.env` yang menunjuk ke database production:
 
-## Catatan penting
+```bash
+php artisan migrate --force
+php artisan db:seed --class=AbsensiSeeder --force
+```
 
-- Vercel bersifat serverless. Jangan mengandalkan file lokal untuk upload foto, session file, atau database SQLite.
-- Gunakan database eksternal seperti Neon, PlanetScale, Railway, Aiven, atau MySQL managed lainnya.
-- Untuk foto presensi gunakan object storage seperti S3, Cloudinary, atau Supabase Storage. Atur `FILESYSTEM_DISK` dan konfigurasi disk sesuai provider.
-- Generate `APP_KEY` secara lokal dengan:
+Generate `APP_KEY` secara lokal dengan:
 
 ```bash
 php artisan key:generate --show
 ```
+
+## Catatan penting
+
+- Render Free dapat tidur setelah tidak ada traffic dan membutuhkan beberapa detik saat dibuka pertama kali.
+- Jangan mengandalkan file lokal untuk upload foto atau database SQLite. Gunakan object storage untuk foto presensi.
+- Gunakan database eksternal seperti Neon, PlanetScale, Railway, Aiven, atau MySQL managed lainnya.
+- Untuk foto presensi gunakan object storage seperti S3, Cloudinary, atau Supabase Storage. Atur `FILESYSTEM_DISK` dan konfigurasi disk sesuai provider.
+- Jangan memakai `DB_HOST=127.0.0.1` atau `localhost` di Vercel. Itu menunjuk ke server Vercel, bukan komputer lokal.
+- Database dan object storage tetap harus berasal dari layanan cloud yang dapat diakses internet; domain gratis saja tidak membuat database lokal menjadi publik.
 
 - Setelah deploy, jalankan migration dari komputer lokal menggunakan environment database production atau gunakan pipeline migration terpisah:
 
@@ -72,11 +54,11 @@ php artisan migrate --force
 
 - Jangan upload file `.env` ke GitHub. Isi secrets melalui Vercel Project Settings.
 
-## Jika halaman blank
+## Jika halaman error
 
-1. Buka Vercel **Deployments > deployment terakhir > Functions > api/index.php > Logs**.
+1. Buka Render **Logs** dan cari error PHP atau database.
 2. Pastikan `APP_KEY` sudah diisi. Generate dengan `php artisan key:generate --show`.
 3. Pastikan `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_DRIVER=cookie`, dan `CACHE_STORE=array`.
-4. Pastikan `APP_URL` memakai URL deployment Vercel.
+4. Pastikan `APP_URL` memakai URL deployment Render.
 5. Pastikan URL database bukan `127.0.0.1` atau `localhost`; gunakan database managed yang bisa diakses internet.
-6. Setelah mengubah environment variables, lakukan **Redeploy** dengan opsi **Use existing Build Cache** dimatikan.
+6. Setelah mengubah environment variables, lakukan **Manual Deploy > Clear build cache & deploy**.
