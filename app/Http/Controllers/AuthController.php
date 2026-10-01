@@ -32,9 +32,17 @@ class AuthController extends Controller
             'password' => $request->password,
         ];
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            return redirect()->intended(route('dashboard'));
+        try {
+            if (Auth::attempt($credentials)) {
+                $request->session()->regenerate();
+                return redirect()->intended(route('dashboard'));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors([
+                'username' => 'Login gagal karena koneksi database atau konfigurasi server sedang bermasalah.',
+            ])->onlyInput('username');
         }
 
         return back()->withErrors([

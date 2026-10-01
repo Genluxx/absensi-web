@@ -13,7 +13,7 @@ return new class extends Migration
         DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('super_admin', 'admin_hr', 'mandor_kebun', 'mandor_pabrik') DEFAULT 'mandor_kebun'");
 
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('role_id')->nullable()->after('role')->constrained('roles')->nullOnDelete();
+            $table->unsignedBigInteger('role_id')->nullable()->after('role');
         });
     }
 

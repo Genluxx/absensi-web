@@ -10,8 +10,16 @@
                 <h2 class="font-bold text-lg">Log & Histori Presensi</h2>
                 <p class="text-sm text-gray-500">Filter cepat, pencarian NIK</p>
             </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                <div class="rounded-xl bg-slate-100 p-3"><p class="text-xs text-gray-500">Wajib absen</p><p class="text-xl font-extrabold">{{ $ringkasan['wajibAbsen'] }}</p></div>
+                <div class="rounded-xl bg-emerald-50 p-3"><p class="text-xs text-gray-500">Tepat waktu ≤ 08:00</p><p class="text-xl font-extrabold text-emerald-700">{{ $ringkasan['tepatWaktu'] }}</p></div>
+                <div class="rounded-xl bg-orange-50 p-3"><p class="text-xs text-gray-500">Terlambat &gt; 08:00</p><p class="text-xl font-extrabold text-orange-700">{{ $ringkasan['terlambat'] }}</p></div>
+                <div class="rounded-xl bg-blue-50 p-3"><p class="text-xs text-gray-500">Cuti</p><p class="text-xl font-extrabold text-blue-700">{{ $ringkasan['cuti'] }}</p></div>
+                <div class="rounded-xl bg-indigo-50 p-3"><p class="text-xs text-gray-500">Izin / sakit</p><p class="text-xl font-extrabold text-indigo-700">{{ $ringkasan['izinSakit'] }}</p></div>
+            </div>
             <a href="{{ route('presensi.log.export', request()->query()) }}"
-    class="flex items-center gap-1.5 bg-gray-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-gray-700">
+    class="export-action flex items-center gap-1.5 bg-gray-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-gray-700">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
@@ -19,9 +27,13 @@
             </a>
         </div>
 
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+         <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
             <input type="text" name="cari" value="{{ request('cari') }}" placeholder="Ketik nama atau NIK..."
                    class="border rounded-lg px-3 py-2 text-sm">
+             <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}" aria-label="Tanggal mulai"
+                 class="border rounded-lg px-3 py-2 text-sm">
+             <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}" aria-label="Tanggal selesai"
+                 class="border rounded-lg px-3 py-2 text-sm">
             <select name="lokasi" class="border rounded-lg px-3 py-2 text-sm">
                 <option value="">Semua Divisi / Stasiun</option>
                 @foreach ($lokasiList as $lokasi)
@@ -32,11 +44,12 @@
                 <option value="">Semua Status</option>
                 <option value="Hadir" {{ request('status') == 'Hadir' ? 'selected' : '' }}>Hadir</option>
                 <option value="Telat" {{ request('status') == 'Telat' ? 'selected' : '' }}>Telat</option>
+                <option value="Cuti" {{ request('status') == 'Cuti' ? 'selected' : '' }}>Cuti</option>
                 <option value="Izin" {{ request('status') == 'Izin' ? 'selected' : '' }}>Izin</option>
                 <option value="Sakit" {{ request('status') == 'Sakit' ? 'selected' : '' }}>Sakit</option>
                 <option value="Alpa" {{ request('status') == 'Alpa' ? 'selected' : '' }}>Alpa</option>
             </select>
-            <button class="md:col-span-3 bg-gray-100 rounded-lg py-2 text-sm font-bold">Filter</button>
+            <button class="md:col-span-5 bg-gray-100 rounded-lg py-2 text-sm font-bold">Terapkan filter laporan</button>
         </form>
 
         <div class="overflow-x-auto rounded-xl border border-slate-200">
@@ -48,7 +61,9 @@
                     <th class="pb-2">Nama Karyawan</th>
                     <th class="pb-2">Divisi/Blok</th>
                     <th class="pb-2">Jam Masuk</th>
+                    <th class="pb-2">Waktu Dicatat</th>
                     <th class="pb-2">Status</th>
+                       <th class="pb-2">Lokasi saat absen</th>
                     <th class="pb-2">Bukti</th>
                     <th class="pb-2">Keterangan</th>
                     <th class="pb-2">Mandor</th>
@@ -62,15 +77,36 @@
                     <td class="py-3 font-bold">{{ $item->karyawan->nama }}</td>
                     <td class="py-3">{{ $item->karyawan->lokasi }}</td>
                     <td class="py-3">{{ $item->jam_masuk ?? '-' }}</td>
+                    <td class="py-3 text-xs">{{ $item->created_at?->format('d/m/Y H:i:s') ?? '-' }}</td>
                     <td class="py-3">
                         <span class="px-2 py-1 rounded text-xs font-bold
                             @if($item->status == 'Hadir') bg-green-100 text-green-700
                             @elseif($item->status == 'Telat') bg-orange-100 text-orange-700
+                            @elseif($item->status === 'Cuti') bg-purple-100 text-purple-700
                             @elseif(in_array($item->status, ['Izin','Sakit'])) bg-blue-100 text-blue-700
                             @else bg-red-100 text-red-700 @endif">
-                            {{ $item->status }}
+                            {{ $item->status }}{{ $item->terlambat ? ' - terlambat' : '' }}
                         </span>
                     </td>
+                        <td class="py-3">
+                            @if(is_numeric($item->latitude) && is_numeric($item->longitude))
+                                <div class="flex flex-col items-start gap-1">
+                                    <span class="font-mono text-[11px] tabular-nums text-slate-500">{{ number_format((float) $item->latitude, 6) }}, {{ number_format((float) $item->longitude, 6) }}</span>
+                                    <a href="https://www.google.com/maps/search/?api=1&amp;query={{ urlencode($item->latitude.','.$item->longitude) }}"
+                                       target="_blank" rel="noopener noreferrer"
+                                       class="inline-flex items-center gap-1 rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-xs font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                       aria-label="Lihat lokasi presensi {{ $item->karyawan->nama }} pada {{ $item->tanggal->format('d/m/Y') }} di Google Maps">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-5.686 7-12a7 7 0 10-14 0c0 6.314 7 12 7 12z" />
+                                            <circle cx="12" cy="9" r="2.25" />
+                                        </svg>
+                                        Lihat peta
+                                    </a>
+                                </div>
+                            @else
+                                <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500">GPS tidak direkam</span>
+                            @endif
+                        </td>
                     <td class="py-3">
                         @if($item->foto_path)
                             <button onclick="document.getElementById('modalFoto{{ $item->id }}').classList.remove('hidden')"
@@ -95,7 +131,7 @@
                             <span class="text-xs text-gray-400">-</span>
                         @endif
                     </td>
-                    <td class="py-3 text-xs">{{ $item->keterangan ?? '-' }}</td>
+                    <td class="py-3 text-xs">{{ $item->keterangan ?? ($item->terlambat ? 'Terlambat absen setelah 08:00' : '-') }}</td>
                     <td class="py-3">{{ $item->mandor->name }}</td>
                 </tr>
                 @endforeach

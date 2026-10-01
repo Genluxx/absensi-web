@@ -45,6 +45,10 @@ class RolePermissionSeeder extends Seeder
             ['slug' => 'mandor_pabrik'],
             ['name' => 'Mandor Pabrik', 'is_system' => true]
         );
+        $superAdmin = Role::firstOrCreate(
+            ['slug' => 'super_admin'],
+            ['name' => 'Super Admin', 'is_system' => true]
+        );
 
         // 3. Assign permission ke tiap role sesuai spek terbaru
         $adminHr->permissions()->sync(
@@ -62,6 +66,7 @@ class RolePermissionSeeder extends Seeder
 
         $mandorKebun->permissions()->sync($permMandor);
         $mandorPabrik->permissions()->sync(Permission::pluck('id'));
+        $superAdmin->permissions()->sync(Permission::pluck('id'));
 
         // 4. Hubungkan users lama ke role_id sesuai kolom role string mereka
         User::where('role', 'admin_hr')->update(['role_id' => $adminHr->id]);
@@ -79,13 +84,27 @@ class RolePermissionSeeder extends Seeder
         );
         
         // 5. Buat akun Super Admin (kalau belum ada)
-        User::firstOrCreate(
+        $superAdminUser = User::firstOrCreate(
             ['username' => 'superadmin'],
             [
                 'name' => 'Super Admin',
                 'email' => 'superadmin@sawita.test',
-                'password' => Hash::make('superadmin123'),
+                'password' => Hash::make('super123'),
                 'role' => 'super_admin',
+                'role_id' => $superAdmin->id,
+                'area' => null,
+            ]
+        );
+        $superAdminUser->update(['role' => 'super_admin', 'role_id' => $superAdmin->id]);
+
+        User::firstOrCreate(
+            ['username' => 'syahrul'],
+            [
+                'name' => 'Super Admin Legacy',
+                'email' => 'syahrul@sawita.test',
+                'password' => Hash::make('rul123'),
+                'role' => 'super_admin',
+                'role_id' => $superAdmin->id,
                 'area' => null,
             ]
         );

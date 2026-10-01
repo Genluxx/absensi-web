@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Karyawan;
 use App\Models\Presensi;
 use App\Models\User;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PresensiController extends Controller
 {
@@ -14,6 +16,10 @@ class PresensiController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->hasPermission('data.view_all');
+
+        if ($user->role === 'karyawan') {
+            return redirect()->route('dashboard');
+        }
 
         if ($isAdmin) {
             $mandorList = User::whereIn('role', ['mandor_kebun', 'mandor_pabrik'])
@@ -25,10 +31,18 @@ class PresensiController extends Controller
                 ? Karyawan::where('mandor_id', $mandorId)->orderBy('nama')->get()
                 : collect();
 
-            return view('presensi.input', compact('user', 'karyawan', 'isAdmin', 'mandorList', 'mandorId'));
+            $presensiHariIni = $mandorId
+                ? Presensi::whereDate('tanggal', now())->where('mandor_id', $mandorId)->get()->keyBy('karyawan_id')
+                : collect();
+
+            return view('presensi.input', compact('user', 'karyawan', 'isAdmin', 'mandorList', 'mandorId', 'presensiHariIni'));
         }
 
         $karyawan = Karyawan::where('mandor_id', $user->id)->orderBy('nama')->get();
+        $presensiHariIni = Presensi::whereDate('tanggal', now())
+            ->where('mandor_id', $user->id)
+            ->get()
+            ->keyBy('karyawan_id');
 
         return view('presensi.input', [
             'user' => $user,
@@ -36,6 +50,7 @@ class PresensiController extends Controller
             'isAdmin' => false,
             'mandorList' => collect(),
             'mandorId' => null,
+            'presensiHariIni' => $presensiHariIni,
         ]);
     }
 
@@ -43,6 +58,76 @@ class PresensiController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->hasPermission('data.view_all');
+        $waktuAbsen = now();
+
+        if ($user->role === 'karyawan') {
+            $karyawan = $user->dataKaryawan;
+            abort_unless($karyawan, 403, 'Data karyawan belum terhubung ke akun ini.');
+
+            $item = $request->input('presensi.'.$karyawan->id, []);
+            $status = $item['status'] ?? null;
+            if (!in_array($status, ['Hadir', 'Cuti', 'Izin', 'Sakit'], true)) {
+                return back()->withErrors(['status' => 'Pilih status absensi terlebih dahulu.']);
+            }
+
+            $keterangan = trim((string) ($item['keterangan'] ?? '')) ?: null;
+
+            if ($status === 'Cuti') {
+                $mulai = $request->date('cuti_mulai');
+                $selesai = $request->date('cuti_selesai');
+                if (!$mulai || !$selesai || $selesai->lt($mulai)) {
+                    return back()->withErrors(['cuti' => 'Pilih tanggal mulai dan selesai cuti yang valid.']);
+                }
+
+                if ($mulai->lt(now()->startOfDay()) || $selesai->year !== now()->year || $mulai->year !== $selesai->year) {
+                    return back()->withErrors(['cuti' => 'Cuti hanya dapat diajukan mulai hari ini dan dalam tahun berjalan.']);
+                }
+
+                $tanggalCuti = collect();
+                for ($tanggal = $mulai->copy(); $tanggal->lte($selesai); $tanggal->addDay()) {
+                    $tanggalCuti->push($tanggal->format('Y-m-d'));
+                }
+
+                $cutiSudahAda = Presensi::where('karyawan_id', $karyawan->id)
+                    ->where('status', 'Cuti')
+                    ->whereIn('tanggal', $tanggalCuti)
+                    ->pluck('tanggal')
+                    ->map(fn ($tanggal) => $tanggal->format('Y-m-d'));
+                $hariBaru = $tanggalCuti->diff($cutiSudahAda)->count();
+                $cutiTerpakai = Presensi::where('karyawan_id', $karyawan->id)
+                    ->where('status', 'Cuti')
+                    ->whereYear('tanggal', now()->year)
+                    ->count();
+
+                if ($cutiTerpakai + $hariBaru > 12) {
+                    return back()->withErrors(['cuti' => 'Jatah cuti maksimal 12 hari per tahun. Sisa cuti Anda: '.max(12 - $cutiTerpakai, 0).' hari.']);
+                }
+
+                DB::transaction(function () use ($tanggalCuti, $karyawan, $keterangan) {
+                    foreach ($tanggalCuti as $tanggal) {
+                        Presensi::updateOrCreate(
+                            ['karyawan_id' => $karyawan->id, 'tanggal' => $tanggal],
+                            ['jam_masuk' => null, 'status' => 'Cuti', 'keterangan' => $keterangan, 'mandor_id' => $karyawan->mandor_id]
+                        );
+                    }
+                });
+
+                return redirect()->route('dashboard')->with('success', 'Cuti berhasil dicatat untuk '.$tanggalCuti->count().' hari.');
+            }
+
+            $jamMasuk = $status === 'Hadir' ? $waktuAbsen->format('H:i:s') : null;
+            if ($status === 'Hadir' && $waktuAbsen->format('H:i:s') > '08:00:00') {
+                $status = 'Telat';
+                $keterangan = trim(($keterangan ? $keterangan.' | ' : '').'Terlambat absen setelah batas wajib 08:00');
+            }
+
+            Presensi::updateOrCreate(
+                ['karyawan_id' => $karyawan->id, 'tanggal' => $waktuAbsen->format('Y-m-d')],
+                ['jam_masuk' => $jamMasuk, 'status' => $status, 'keterangan' => $keterangan, 'mandor_id' => $karyawan->mandor_id]
+            );
+
+            return redirect()->route('dashboard')->with('success', 'Absensi berhasil dicatat sebagai '.$status.'.');
+        }
 
         $mandorId = $isAdmin ? $request->input('mandor_id') : $user->id;
 
@@ -51,12 +136,13 @@ class PresensiController extends Controller
         }
 
         $data = $request->input('presensi', []);
+        $statusValid = ['Hadir', 'Telat', 'Cuti', 'Izin', 'Sakit', 'Alpa'];
 
         // Whitelist: hanya karyawan_id milik tim yang dipilih yang boleh diproses
         $karyawanIdsMilikTim = Karyawan::where('mandor_id', $mandorId)->pluck('id')->toArray();
 
         foreach ($data as $karyawanId => $item) {
-            if (empty($item['status'])) {
+            if (empty($item['status']) || !in_array($item['status'], $statusValid, true)) {
                 continue;
             }
 
@@ -64,12 +150,19 @@ class PresensiController extends Controller
                 continue; // cegah input presensi ke karyawan tim lain
             }
 
-            $jamMasuk = in_array($item['status'], ['Hadir', 'Telat']) ? now()->format('H:i:s') : null;
+            $status = $item['status'];
+            $jamMasuk = in_array($status, ['Hadir', 'Telat']) ? $waktuAbsen->format('H:i:s') : null;
+            $keterangan = $item['keterangan'] ?? null;
+
+            if ($status === 'Hadir' && $waktuAbsen->format('H:i:s') > '08:00:00') {
+                $status = 'Telat';
+                $keterangan = trim(($keterangan ? $keterangan.' | ' : '').'Terlambat absen setelah batas wajib 08:00');
+            }
 
             $updateData = [
                 'jam_masuk' => $jamMasuk,
-                'status' => $item['status'],
-                'keterangan' => $item['keterangan'] ?? null,
+                'status' => $status,
+                'keterangan' => $keterangan,
                 'mandor_id' => $mandorId,
             ];
 
@@ -100,6 +193,11 @@ class PresensiController extends Controller
                 $updateData
             );
         }
+
+        AuditLog::record('save_attendance', 'Menyimpan presensi tim untuk tanggal '.$waktuAbsen->format('d/m/Y').'.', null, [
+            'mandor_id' => $mandorId,
+            'records_received' => count($data),
+        ]);
 
         return redirect()->route('presensi.input', $isAdmin ? ['mandor_id' => $mandorId] : [])
             ->with('success', 'Presensi tim berhasil disimpan');
@@ -138,7 +236,24 @@ class PresensiController extends Controller
             $query->whereHas('karyawan', fn($q) => $q->where('lokasi', $request->lokasi));
         }
 
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal', '>=', $request->date('tanggal_mulai'));
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('tanggal', '<=', $request->date('tanggal_selesai'));
+        }
+
         $data = $query->paginate(15)->withQueryString();
+
+        $ringkasanQuery = clone $query;
+        $ringkasan = [
+            'wajibAbsen' => (clone $ringkasanQuery)->whereIn('status', ['Hadir', 'Telat'])->count(),
+            'tepatWaktu' => (clone $ringkasanQuery)->whereIn('status', ['Hadir', 'Telat'])->where('jam_masuk', '<=', '08:00:00')->count(),
+            'terlambat' => (clone $ringkasanQuery)->whereIn('status', ['Hadir', 'Telat'])->where('jam_masuk', '>', '08:00:00')->count(),
+            'cuti' => (clone $ringkasanQuery)->where('status', 'Cuti')->count(),
+            'izinSakit' => (clone $ringkasanQuery)->whereIn('status', ['Izin', 'Sakit'])->count(),
+        ];
 
         $lokasiQuery = Karyawan::query();
         if (!$isAdmin) {
@@ -146,7 +261,7 @@ class PresensiController extends Controller
         }
         $lokasiList = $lokasiQuery->select('lokasi')->distinct()->pluck('lokasi');
 
-        return view('presensi.log', compact('user', 'data', 'lokasiList'));
+        return view('presensi.log', compact('user', 'data', 'lokasiList', 'ringkasan'));
     }
 
     public function export(Request $request)
@@ -166,6 +281,21 @@ class PresensiController extends Controller
 
         if ($request->lokasi) {
             $query->whereHas('karyawan', fn($q) => $q->where('lokasi', $request->lokasi));
+        }
+
+        if ($request->filled('cari')) {
+            $query->whereHas('karyawan', function ($q) use ($request) {
+                $q->where('nama', 'like', '%'.$request->cari.'%')
+                  ->orWhere('nik', 'like', '%'.$request->cari.'%');
+            });
+        }
+
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal', '>=', $request->date('tanggal_mulai'));
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('tanggal', '<=', $request->date('tanggal_selesai'));
         }
 
         $data = $query->get();

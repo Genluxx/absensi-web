@@ -14,12 +14,17 @@ class Karyawan extends Model
     protected $table = 'karyawan';
 
     protected $fillable = [
-        'nik', 'nama', 'jabatan', 'tipe', 'lokasi', 'mandor_id',
+        'nik', 'nama', 'jabatan', 'tipe', 'lokasi', 'mandor_id', 'user_id',
     ];
 
     public function mandor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'mandor_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function presensi(): HasMany

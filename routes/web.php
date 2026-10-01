@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KoreksiController;
@@ -30,10 +31,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
-    Route::get('/presensi/log', [PresensiController::class, 'log'])->name('presensi.log');
-    Route::get('/presensi/log/export', [PresensiController::class, 'export'])->name('presensi.log.export');
-    Route::get('/karyawan', [KaryawanController::class, 'halaman'])->name('karyawan.index');
-    Route::get('/koreksi', [KoreksiController::class, 'index'])->name('koreksi.index');
+    Route::get('/presensi/log', [PresensiController::class, 'log'])
+        ->middleware('permission:presensi.view')->name('presensi.log');
+    Route::get('/presensi/log/export', [PresensiController::class, 'export'])
+        ->middleware('permission:presensi.export')->name('presensi.log.export');
+    Route::get('/karyawan', [KaryawanController::class, 'halaman'])
+        ->middleware('permission:karyawan.view')->name('karyawan.index');
+    Route::get('/koreksi', [KoreksiController::class, 'index'])
+        ->middleware('permission:koreksi.request')->name('koreksi.index');
 
     Route::post('/presensi/simpan', [PresensiController::class, 'simpan'])
         ->middleware('permission:presensi.input')->name('presensi.simpan');
@@ -49,6 +54,10 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/karyawan', [KaryawanController::class, 'store'])
         ->middleware('permission:karyawan.create')->name('karyawan.store');
+    Route::post('/karyawan/{karyawan}/presensi', [KaryawanController::class, 'quickAttendance'])
+        ->middleware('permission:presensi.input')->name('karyawan.presensi.store');
+    Route::post('/karyawan/{karyawan}/akun', [KaryawanController::class, 'createAccount'])
+        ->middleware('permission:karyawan.create')->name('karyawan.account.store');
     Route::put('/karyawan/{karyawan}', [KaryawanController::class, 'update'])
         ->middleware('permission:karyawan.edit')->name('karyawan.update');
     Route::delete('/karyawan/{karyawan}', [KaryawanController::class, 'destroy'])
@@ -57,7 +66,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:mandor.manage')->group(function () {
         Route::get('/mandor', [MandorController::class, 'index'])->name('mandor.index');
         Route::post('/mandor', [MandorController::class, 'store'])->name('mandor.store');
+        Route::put('/mandor/{mandor}/password', [MandorController::class, 'updatePassword'])->name('mandor.password.update');
         Route::delete('/mandor/{mandor}', [MandorController::class, 'destroy'])->name('mandor.destroy');
+    });
+
+    Route::middleware('permission:role.manage')->group(function () {
+        Route::get('/audit-aktivitas', [AuditLogController::class, 'index'])->name('audit.index');
     });
 
     Route::middleware('superadmin')->group(function () {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KoreksiRequest;
 use App\Models\Presensi;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -73,6 +74,8 @@ class KoreksiController extends Controller
             'status' => 'pending',
         ]);
 
+        AuditLog::record('request_correction', 'Mengajukan koreksi presensi #'.$presensi->id.'.', $presensi);
+
         return redirect()->route('koreksi.index')->with('success', 'Permintaan koreksi berhasil diajukan, menunggu persetujuan.');
     }
 
@@ -97,6 +100,8 @@ class KoreksiController extends Controller
             'approved_by' => Auth::id(),
         ]);
 
+        AuditLog::record('approve_correction', 'Menyetujui koreksi presensi #'.$presensi->id.'.', $koreksi);
+
         return back()->with('success', 'Koreksi disetujui, data presensi telah diperbarui.');
     }
 
@@ -115,6 +120,8 @@ class KoreksiController extends Controller
             'approved_by' => Auth::id(),
             'catatan_admin' => $request->catatan_admin,
         ]);
+
+        AuditLog::record('reject_correction', 'Menolak koreksi presensi #'.$koreksi->presensi_id.'.', $koreksi);
 
         return back()->with('success', 'Permintaan koreksi ditolak.');
     }

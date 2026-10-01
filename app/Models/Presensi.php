@@ -19,7 +19,16 @@ class Presensi extends Model
 
     protected $casts = [
         'tanggal' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
+
+    public function getTerlambatAttribute(): bool
+    {
+        return in_array($this->status, ['Hadir', 'Telat'], true)
+            && $this->jam_masuk
+            && $this->jam_masuk > '08:00:00';
+    }
 
     public function karyawan(): BelongsTo
     {

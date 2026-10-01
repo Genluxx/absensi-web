@@ -14,6 +14,17 @@ class AbsensiSeeder extends Seeder
     public function run(): void
     {
         // Akun login
+        $superAdmin = User::firstOrCreate(
+            ['username' => 'superadmin'],
+            [
+                'name' => 'Super Admin',
+                'email' => 'superadmin@absensiweb.test',
+                'password' => Hash::make('super123'),
+                'role' => 'super_admin',
+                'area' => null,
+            ]
+        );
+
         $admin = User::firstOrCreate(
             ['username' => 'admin'],
             [
@@ -117,6 +128,7 @@ class AbsensiSeeder extends Seeder
                         'jam_masuk' => $jamMasuk,
                         'status' => $status,
                         'keterangan' => 'Presensi harian',
+                        'lokasi_gps' => null,
                         'mandor_id' => $data['mandor'],
                     ]
                 );

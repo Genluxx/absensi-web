@@ -52,6 +52,11 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         return $this->hasMany(\App\Models\Karyawan::class, 'mandor_id');
     }
+
+    public function dataKaryawan()
+    {
+        return $this->hasOne(\App\Models\Karyawan::class, 'user_id');
+    }
     public function roleData()
     {
         return $this->belongsTo(\App\Models\Role::class, 'role_id');
@@ -59,12 +64,13 @@ class User extends Authenticatable implements CanResetPasswordContract
     
     public function hasPermission(string $slug): bool
     {
-        // Super admin selalu punya semua akses
-        if ($this->role === 'super_admin') {
+        if (in_array($this->role, ['super_admin', 'admin_hr'], true)) {
             return true;
         }
-    
-        return $this->roleData && $this->roleData->hasPermission($slug);
+
+        $role = $this->roleData ?: Role::where('slug', $this->role)->first();
+
+        return $role?->hasPermission($slug) ?? false;
     }
     public function presensi()
     {
