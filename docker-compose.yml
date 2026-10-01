@@ -29,7 +29,7 @@ services:
       APP_ENV: production
       APP_DEBUG: "false"
       APP_KEY: ${APP_KEY:?Set APP_KEY in .env}
-      APP_URL: ${APP_URL:-http://192.168.6.116:1301}
+      APP_URL: ${APP_URL:-http://localhost:8080}
       LOG_CHANNEL: stderr
       LOG_LEVEL: info
       SESSION_DRIVER: cookie
@@ -47,7 +47,7 @@ services:
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:?Set INITIAL_ADMIN_EMAIL in .env}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:?Set INITIAL_ADMIN_PASSWORD in .env}
     ports:
-      - "1301:80"
+      - "127.0.0.1:8080:80"
 
 volumes:
   absensi_web_mysql_data:
