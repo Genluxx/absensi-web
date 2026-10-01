@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use App\Models\Role;
 use App\Models\User;
+use PDOException;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -32,22 +35,53 @@ class AuthController extends Controller
             'password' => $request->password,
         ];
 
-        try {
-            if (Auth::attempt($credentials)) {
-                $request->session()->regenerate();
-                return redirect()->intended(route('dashboard'));
-            }
-        } catch (\Throwable $e) {
-            report($e);
+        $maxAttempts = 3;
 
-            return back()->withErrors([
-                'username' => 'Login gagal karena koneksi database atau konfigurasi server sedang bermasalah.',
-            ])->onlyInput('username');
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                if (Auth::attempt($credentials)) {
+                    $request->session()->regenerate();
+                    return redirect()->intended(route('dashboard'));
+                }
+
+                return back()->withErrors([
+                    'username' => 'Username atau password salah.',
+                ])->onlyInput('username');
+            } catch (PDOException $e) {
+                if ($attempt === $maxAttempts || !$this->isTransientDatabaseError($e)) {
+                    report($e);
+
+                    return back()->withErrors([
+                        'username' => 'Login gagal karena koneksi database atau konfigurasi server sedang bermasalah.',
+                    ])->onlyInput('username');
+                }
+
+                DB::purge();
+                usleep($attempt * 250000);
+            }
         }
 
         return back()->withErrors([
-            'username' => 'Username atau password salah.',
+            'username' => 'Login gagal karena koneksi database atau konfigurasi server sedang bermasalah.',
         ])->onlyInput('username');
+    }
+
+    private function isTransientDatabaseError(Throwable $exception): bool
+    {
+        do {
+            $sqlState = (string) $exception->getCode();
+            $driverCode = $exception instanceof PDOException
+                ? (int) ($exception->errorInfo[1] ?? 0)
+                : 0;
+
+            if (str_starts_with($sqlState, '08') || in_array($driverCode, [2002, 2003, 2006, 2013, 2055], true)) {
+                return true;
+            }
+
+            $exception = $exception->getPrevious();
+        } while ($exception !== null);
+
+        return false;
     }
 
     public function showRegister()
