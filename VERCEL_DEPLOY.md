@@ -4,13 +4,17 @@ Aplikasi berjalan dengan Docker dan menggunakan MySQL managed eksternal. Reposit
 
 ## Setup database lokal
 
-Salin `.env.example` menjadi `.env`, lalu isi `APP_KEY`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, dan seluruh `INITIAL_ADMIN_*`. Password admin harus minimal 12 karakter. Setelah itu jalankan:
+Salin `.env.example` menjadi `.env`, lalu isi `APP_KEY` dan `DB_PASSWORD` dengan nilai acak yang kuat. `MYSQL_ROOT_PASSWORD` boleh dikosongkan agar memakai `DB_PASSWORD` yang sama. Database Laravel dari host memakai `127.0.0.1:3307`, sedangkan container aplikasi memakai service MySQL internal. Jangan gunakan password contoh di server publik.
+
+Untuk membuat skema baru yang sama dengan database aplikasi, jalankan:
 
 ```bash
 docker compose up --build
 ```
 
-Aplikasi tersedia di `http://localhost:8080`. Compose menjalankan MySQL dan aplikasi pada port `8080`; migration dan seeder berjalan saat container aplikasi mulai.
+Aplikasi tersedia di `http://192.168.6.10:1301` pada jaringan yang dapat menjangkau server Ubuntu. Compose meneruskan port host `1301` ke Apache di container pada port `80`, membuat volume MySQL persisten, dan menjalankan seluruh migration Laravel saat container mulai. Seeder demo tidak dijalankan pada mode lokal. Untuk database kosong, isi `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_USERNAME`, `INITIAL_ADMIN_EMAIL`, dan `INITIAL_ADMIN_PASSWORD` di `.env`, lalu set `RUN_SEEDERS=true` agar role dan akun superadmin dibuat.
+
+Migration mereplikasi struktur tabel, bukan isi database lama. Untuk memindahkan data, ekspor database lama dengan `mysqldump --single-transaction`, mulai database Docker dengan `docker compose up -d absensi-web-mysql`, salin dump ke container dengan `docker cp`, lalu impor ke database Docker melalui `docker exec`. Pastikan target masih kosong sebelum import dan jangan hapus database lama sampai tabel serta jumlah data di Docker sudah diverifikasi.
 
 ## Setup Render
 

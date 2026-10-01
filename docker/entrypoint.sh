@@ -30,5 +30,8 @@ until php artisan migrate --force; do
     sleep 3
 done
 
-php artisan db:seed --force
+if [ "${APP_ENV:-production}" = "production" ] || [ "${RUN_SEEDERS:-false}" = "true" ]; then
+    php artisan db:seed --force
+fi
+
 exec apache2-foreground

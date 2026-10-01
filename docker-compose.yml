@@ -4,7 +4,7 @@ services:
     container_name: absensi-web-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD:?Set DB_PASSWORD in .env}}
       MYSQL_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
       MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in .env}
       MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
@@ -26,10 +26,10 @@ services:
         condition: service_healthy
     environment:
       APP_NAME: SAP.HRIS
-      APP_ENV: production
+      APP_ENV: ${APP_ENV:-local}
       APP_DEBUG: "false"
       APP_KEY: ${APP_KEY:?Set APP_KEY in .env}
-      APP_URL: ${APP_URL:-http://localhost:8080}
+      APP_URL: ${APP_URL:-http://192.168.6.10:1301}
       LOG_CHANNEL: stderr
       LOG_LEVEL: info
       SESSION_DRIVER: cookie
@@ -42,12 +42,13 @@ services:
       DB_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
       DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
-      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:?Set INITIAL_ADMIN_NAME in .env}
-      INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME:?Set INITIAL_ADMIN_USERNAME in .env}
-      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:?Set INITIAL_ADMIN_EMAIL in .env}
-      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:?Set INITIAL_ADMIN_PASSWORD in .env}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-}
+      INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME:-}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
+      RUN_SEEDERS: ${RUN_SEEDERS:-false}
     ports:
-      - "127.0.0.1:8080:80"
+      - "1301:80"
 
 volumes:
   absensi_web_mysql_data:
