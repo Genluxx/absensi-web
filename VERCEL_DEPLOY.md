@@ -12,7 +12,7 @@ Untuk membuat skema baru yang sama dengan database aplikasi, jalankan:
 docker compose up --build
 ```
 
-Aplikasi tersedia di `http://192.168.6.10:1301` pada jaringan yang dapat menjangkau server Ubuntu. Compose meneruskan port host `1301` ke Apache di container pada port `80`, membuat volume MySQL persisten, dan menjalankan seluruh migration Laravel saat container mulai. Seeder demo tidak dijalankan pada mode lokal. Untuk database kosong, isi `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_USERNAME`, `INITIAL_ADMIN_EMAIL`, dan `INITIAL_ADMIN_PASSWORD` di `.env`, lalu set `RUN_SEEDERS=true` agar role dan akun superadmin dibuat.
+Aplikasi tersedia di `http://192.168.6.116:1301/` pada jaringan yang dapat menjangkau server Ubuntu. Compose meneruskan port host `1301` ke Apache di container pada port `80`, membuat volume MySQL persisten, dan menjalankan seluruh migration Laravel saat container mulai. MySQL diakses aplikasi melalui jaringan internal Docker pada `absensi-web-mysql:3306`; port web `1301` bukan port database. Seeder demo tidak dijalankan pada mode lokal. Untuk database kosong, isi `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_USERNAME`, `INITIAL_ADMIN_EMAIL`, dan `INITIAL_ADMIN_PASSWORD` di `.env`, lalu set `RUN_SEEDERS=true` agar role dan akun superadmin dibuat.
 
 Migration mereplikasi struktur tabel, bukan isi database lama. Untuk memindahkan data, ekspor database lama dengan `mysqldump --single-transaction`, mulai database Docker dengan `docker compose up -d absensi-web-mysql`, salin dump ke container dengan `docker cp`, lalu impor ke database Docker melalui `docker exec`. Pastikan target masih kosong sebelum import dan jangan hapus database lama sampai tabel serta jumlah data di Docker sudah diverifikasi.
 
