@@ -6,7 +6,6 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -72,6 +71,7 @@ class RolePermissionSeeder extends Seeder
         User::where('role', 'admin_hr')->update(['role_id' => $adminHr->id]);
         User::where('role', 'mandor_kebun')->update(['role_id' => $mandorKebun->id]);
         User::where('role', 'mandor_pabrik')->update(['role_id' => $mandorPabrik->id]);
+        User::where('role', 'super_admin')->update(['role_id' => $superAdmin->id]);
 
         $adminHr->permissions()->sync(
             Permission::whereIn('slug', [
@@ -83,30 +83,5 @@ class RolePermissionSeeder extends Seeder
             ])->pluck('id')
         );
         
-        // 5. Buat akun Super Admin (kalau belum ada)
-        $superAdminUser = User::firstOrCreate(
-            ['username' => 'superadmin'],
-            [
-                'name' => 'Super Admin',
-                'email' => 'superadmin@sawita.test',
-                'password' => Hash::make('super123'),
-                'role' => 'super_admin',
-                'role_id' => $superAdmin->id,
-                'area' => null,
-            ]
-        );
-        $superAdminUser->update(['role' => 'super_admin', 'role_id' => $superAdmin->id]);
-
-        User::firstOrCreate(
-            ['username' => 'syahrul'],
-            [
-                'name' => 'Super Admin Legacy',
-                'email' => 'syahrul@sawita.test',
-                'password' => Hash::make('rul123'),
-                'role' => 'super_admin',
-                'role_id' => $superAdmin->id,
-                'area' => null,
-            ]
-        );
     }
 }

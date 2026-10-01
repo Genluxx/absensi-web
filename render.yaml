@@ -17,12 +17,24 @@ services:
         sync: false
       - key: LOG_CHANNEL
         value: stderr
+      - key: LOG_LEVEL
+        value: info
       - key: SESSION_DRIVER
         value: cookie
       - key: CACHE_STORE
         value: array
       - key: FILESYSTEM_DISK
         value: local
+      - key: ALLOW_REGISTRATION
+        value: "false"
+      - key: INITIAL_ADMIN_NAME
+        sync: false
+      - key: INITIAL_ADMIN_USERNAME
+        sync: false
+      - key: INITIAL_ADMIN_EMAIL
+        sync: false
+      - key: INITIAL_ADMIN_PASSWORD
+        sync: false
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST

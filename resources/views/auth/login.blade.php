@@ -210,7 +210,9 @@
 
             <div class="mt-5 flex justify-between text-xs font-semibold">
                 <span class="text-[#7b6d62]">Baru di SAP.HRIS?</span>
-                <a href="{{ route('register') }}" class="login-link">Buat akun baru</a>
+                @if (config('app.allow_registration'))
+                    <a href="{{ route('register') }}" class="login-link">Buat akun baru</a>
+                @endif
             </div>
 
         </div>

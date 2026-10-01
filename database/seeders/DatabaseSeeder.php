@@ -9,9 +9,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            UserSeeder::class,
-            AbsensiSeeder::class,
             RolePermissionSeeder::class,
+            RevokeDemoAccountsSeeder::class,
+            InitialSuperAdminSeeder::class,
         ]);
     }
 }

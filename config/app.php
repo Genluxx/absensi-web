@@ -44,6 +44,15 @@ return [
 
     'debug' => (bool) env('APP_DEBUG', false),
 
+    'allow_registration' => (bool) env('ALLOW_REGISTRATION', false),
+
+    'initial_admin' => [
+        'name' => env('INITIAL_ADMIN_NAME'),
+        'username' => env('INITIAL_ADMIN_USERNAME'),
+        'email' => env('INITIAL_ADMIN_EMAIL'),
+        'password' => env('INITIAL_ADMIN_PASSWORD'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application URL

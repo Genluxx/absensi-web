@@ -52,11 +52,15 @@ class AuthController extends Controller
 
     public function showRegister()
     {
+        abort_unless(config('app.allow_registration'), 404);
+
         return view('auth.register');
     }
 
     public function register(Request $request)
     {
+        abort_unless(config('app.allow_registration'), 404);
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:100|unique:users,username',

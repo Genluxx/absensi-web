@@ -22,10 +22,12 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/entrypoint.sh /usr/local/bin/absensi-entrypoint
 
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod +x /usr/local/bin/absensi-entrypoint \
     && composer dump-autoload --no-dev --optimize --no-interaction
 
 EXPOSE 80
-CMD ["apache2-foreground"]
+CMD ["absensi-entrypoint"]

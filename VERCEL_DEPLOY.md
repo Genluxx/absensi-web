@@ -1,64 +1,30 @@
-# Deploy SAP.HRIS ke Render Free
+# Deploy SAP.HRIS ke Render
 
-Project ini menyediakan `Dockerfile` dan `render.yaml` untuk deployment ke Render Free. Render akan memberikan URL publik seperti `https://absensi-web.onrender.com`, sehingga aplikasi dapat diakses dari jaringan mana pun.
+Aplikasi berjalan dengan Docker dan menggunakan MySQL managed eksternal. Repository tidak menyimpan kredensial database; siapkan database MySQL di provider pilihan Anda sebelum membuat service Render.
 
-## Langkah deploy
+## Setup database lokal
 
-URL gratis Vercel berbentuk `https://nama-project.vercel.app` dan dapat dibuka dari jaringan atau IP mana pun. Komputer lokal tidak perlu menyala setelah deployment selesai.
-
-## Deploy lewat dashboard Render
-
-1. Push repository ini ke GitHub.
-2. Buka Render Dashboard, pilih **New > Web Service**, lalu hubungkan repository.
-3. Pilih **Docker** sebagai runtime dan paket **Free**.
-4. Isi environment variables berikut:
-
-```text
-APP_KEY=hasil_php_artisan_key_generate
-APP_URL=https://nama-service.onrender.com
-DB_HOST=host-database-cloud
-DB_PORT=3306
-DB_DATABASE=nama_database
-DB_USERNAME=user_database
-DB_PASSWORD=password_database
-```
-
-5. Klik **Create Web Service**. Render akan membangun `Dockerfile` dan memberikan URL publik.
-6. Setelah service aktif, jalankan migration dari komputer lokal dengan `.env` yang menunjuk ke database production:
+Salin `.env.example` menjadi `.env`, lalu isi `APP_KEY`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, dan seluruh `INITIAL_ADMIN_*`. Password admin harus minimal 12 karakter. Setelah itu jalankan:
 
 ```bash
-php artisan migrate --force
-php artisan db:seed --class=AbsensiSeeder --force
+docker compose up --build
 ```
 
-Generate `APP_KEY` secara lokal dengan:
+Aplikasi tersedia di `http://localhost:8080`. Compose menjalankan MySQL dan aplikasi; migration dan seeder berjalan saat container aplikasi mulai.
 
-```bash
-php artisan key:generate --show
-```
+## Setup Render
 
-## Catatan penting
+1. Buat database MySQL managed dan siapkan host, port, nama database, username, dan password. Pastikan koneksi dari Render diizinkan oleh provider database.
+2. Hubungkan repository GitHub ke Render sebagai Blueprint agar konfigurasi `render.yaml` digunakan.
+3. Isi environment variables yang diminta Render: `APP_KEY`, `APP_URL`, `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, dan seluruh `INITIAL_ADMIN_*`. Gunakan password admin unik minimal 12 karakter.
+4. Deploy service. Container memvalidasi environment production, menjalankan migration dan seeder, lalu memulai Apache. Koneksi MySQL dicoba ulang jika database belum siap.
 
-- Render Free dapat tidur setelah tidak ada traffic dan membutuhkan beberapa detik saat dibuka pertama kali.
-- Jangan mengandalkan file lokal untuk upload foto atau database SQLite. Gunakan object storage untuk foto presensi.
-- Gunakan database eksternal seperti Neon, PlanetScale, Railway, Aiven, atau MySQL managed lainnya.
-- Untuk foto presensi gunakan object storage seperti S3, Cloudinary, atau Supabase Storage. Atur `FILESYSTEM_DISK` dan konfigurasi disk sesuai provider.
-- Jangan memakai `DB_HOST=127.0.0.1` atau `localhost` di Vercel. Itu menunjuk ke server Vercel, bukan komputer lokal.
-- Database dan object storage tetap harus berasal dari layanan cloud yang dapat diakses internet; domain gratis saja tidak membuat database lokal menjadi publik.
+Buat `APP_KEY` secara lokal dengan `php artisan key:generate --show`. Jangan commit `.env` atau mengisi secret di file repository. `APP_DEBUG` harus `false`; pendaftaran publik dinonaktifkan kecuali `ALLOW_REGISTRATION` sengaja diubah.
 
-- Setelah deploy, jalankan migration dari komputer lokal menggunakan environment database production atau gunakan pipeline migration terpisah:
+## Catatan production
 
-```bash
-php artisan migrate --force
-```
-
-- Jangan upload file `.env` ke GitHub. Isi secrets melalui Vercel Project Settings.
-
-## Jika halaman error
-
-1. Buka Render **Logs** dan cari error PHP atau database.
-2. Pastikan `APP_KEY` sudah diisi. Generate dengan `php artisan key:generate --show`.
-3. Pastikan `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_DRIVER=cookie`, dan `CACHE_STORE=array`.
-4. Pastikan `APP_URL` memakai URL deployment Render.
-5. Pastikan URL database bukan `127.0.0.1` atau `localhost`; gunakan database managed yang bisa diakses internet.
-6. Setelah mengubah environment variables, lakukan **Manual Deploy > Clear build cache & deploy**.
+- Seeder default tidak membuat akun demo. Akun demo lama dengan email domain `@absensiweb.test` atau `@sawita.test` dinonaktifkan ketika seeder production berjalan.
+- Jangan menjalankan `AbsensiSeeder` atau `UserSeeder` di production.
+- Filesystem container Render bersifat sementara. Gunakan object storage seperti S3 atau Cloudinary untuk foto presensi sebelum menerima data production.
+- Backup database secara berkala dan uji proses pemulihannya.
+- Jika deployment gagal, periksa Render Logs untuk kegagalan koneksi/migrasi dan pastikan semua kredensial database benar. Jangan aktifkan `APP_DEBUG` pada service publik.
